@@ -361,10 +361,6 @@ function renderForecast(weatherData, kpForecastArray) {
   }
 }
 
-    els.forecast.appendChild(dayDiv);
-  }
-}
-
 async function updateDashboard() {
   els.score.innerHTML = '--<span style="font-size: 0.5em">%</span>';
   els.location.textContent = locationName;
