@@ -355,6 +355,21 @@ h1 {
   font-weight: bold;
 }
 
+.bottom-controls {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.site-footer {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
 .charts-section {
   padding: 2rem;
 }

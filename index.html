@@ -18,14 +18,6 @@
       <main class="container">
         <header>
           <h1>Atmolibria</h1>
-          <button id="geo-btn" class="capsule-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-            Оновити геопозицію
-          </button>
         </header>
 
         <section class="wellbeing-card capsule">
@@ -44,7 +36,22 @@
             <div class="status" style="text-align:center; width:100%;">Завантаження прогнозу...</div>
           </div>
         </section>
+
+        <div class="bottom-controls">
+          <button id="geo-btn" class="capsule-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            Оновити геопозицію
+          </button>
+        </div>
+
       </main>
+
+      <footer class="site-footer">
+        <p>Created by Octopus Better</p>
+      </footer>
     </div>
     <script type="module" src="/main.js"></script>
   </body>
