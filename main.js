@@ -10,6 +10,7 @@ const els = {
   location: document.getElementById('location'),
   geoBtn: document.getElementById('geo-btn'),
   breakdown: document.getElementById('breakdown-container'),
+  symptoms: document.getElementById('symptoms-container'),
   forecast: document.getElementById('forecast-container'),
   root: document.documentElement
 };
@@ -85,11 +86,34 @@ function getTrend(current, previous, idealMin, idealMax) {
   }
 }
 
-function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hourlyData, currentIndex) {
+function getMoonPhase(date) {
+  // Known new moon: Jan 11, 2024 11:57 UTC
+  const newMoon = new Date('2024-01-11T11:57:00Z').getTime();
+  const lunarCycle = 29.53058867 * 24 * 60 * 60 * 1000;
+  
+  const diff = date.getTime() - newMoon;
+  let phase = (diff % lunarCycle) / lunarCycle;
+  if (phase < 0) phase += 1;
+  
+  // Return phase type and icon
+  if (phase < 0.03 || phase > 0.97) return { name: 'Новомісяччя', icon: '🌑', type: 'new' };
+  if (phase < 0.22) return { name: 'Молодий місяць', icon: '🌒', type: 'waxing_crescent' };
+  if (phase < 0.28) return { name: 'Перша чверть', icon: '🌓', type: 'first_quarter' };
+  if (phase < 0.47) return { name: 'Місяць прибуває', icon: '🌔', type: 'waxing_gibbous' };
+  if (phase < 0.53) return { name: 'Повня', icon: '🌕', type: 'full' };
+  if (phase < 0.72) return { name: 'Місяць щербатий', icon: '🌖', type: 'waning_gibbous' };
+  if (phase < 0.78) return { name: 'Остання чверть', icon: '🌗', type: 'last_quarter' };
+  return { name: 'Старий місяць', icon: '🌘', type: 'waning_crescent' };
+}
+
+function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hourlyData, currentIndex, dateObj) {
   let score = 100;
   let breakdown = [];
+  let symptoms = [];
 
-  // TEMPERATURE (Ideal 18-24)
+  const moon = getMoonPhase(dateObj || new Date());
+
+  // TEMPERATURE
   let pTemp = 0;
   let textTemp = `Температура: Норма (${temp.toFixed(1)}°C)`;
   if (temp > 24) {
@@ -97,17 +121,17 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
     if (pTemp > 0) textTemp = `Спекотно (${temp.toFixed(1)}°C)`;
   } else if (temp < 18) {
     pTemp = Math.round(Math.pow(18 - temp, 1.3) * 1.2);
-    if (pTemp > 0) textTemp = `Прохолодно/Холодно (${temp.toFixed(1)}°C)`;
+    if (pTemp > 0) textTemp = `Прохолодно (${temp.toFixed(1)}°C)`;
   }
   score -= pTemp;
   breakdown.push({ text: textTemp, value: -pTemp });
 
-  // HUMIDITY (Ideal 30-60)
+  // HUMIDITY
   let pHum = 0;
   let textHum = `Вологість: Норма (${humidity}%)`;
   if (humidity > 60) {
     pHum = Math.round(Math.pow(humidity - 60, 1.2) * 0.4);
-    if (pHum > 0) textHum = `Вогко/Висока вологість (${humidity}%)`;
+    if (pHum > 0) textHum = `Вогко (${humidity}%)`;
   } else if (humidity < 30) {
     pHum = Math.round(Math.pow(30 - humidity, 1.2) * 0.4);
     if (pHum > 0) textHum = `Сухе повітря (${humidity}%)`;
@@ -115,7 +139,7 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
   score -= pHum;
   breakdown.push({ text: textHum, value: -pHum });
 
-  // PRESSURE (Ideal 1000-1020)
+  // PRESSURE
   let pPress = 0;
   let textPress = `Тиск: Норма (${Math.round(pressure)} гПа)`;
   if (pressure < 1000) {
@@ -128,17 +152,17 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
   score -= pPress;
   breakdown.push({ text: textPress, value: -pPress });
 
-  // AQI (Ideal 0-20)
+  // AQI
   let pAqi = 0;
   let textAqi = `Якість повітря: Норма (AQI ${Math.round(aqi)})`;
   if (aqi > 20) {
     pAqi = Math.round(Math.pow(aqi - 20, 1.1) * 0.4);
-    if (pAqi > 0) textAqi = `Забруднення повітря (AQI ${Math.round(aqi)})`;
+    if (pAqi > 0) textAqi = `Забруднення (AQI ${Math.round(aqi)})`;
   }
   score -= pAqi;
   breakdown.push({ text: textAqi, value: -pAqi });
 
-  // KP (Ideal 0-3)
+  // KP
   let pKp = 0;
   let textKp = `Магнітний фон: Норма (Kp ${kp.toFixed(1)})`;
   if (kp > 3) {
@@ -148,7 +172,7 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
   score -= pKp;
   breakdown.push({ text: textKp, value: -pKp });
 
-  // WIND (Ideal 0-7 m/s)
+  // WIND
   let pWind = 0;
   let textWind = `Вітер: Норма (${wind.toFixed(1)} м/с)`;
   if (wind > 7) {
@@ -169,39 +193,64 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
     if (pressureDiff > 5) {
       const p = Math.round(Math.pow(pressureDiff - 4, 1.6) * 1.5);
       score -= p;
-      breakdown.push({ text: `Стрибок тиску (${pressureDiff.toFixed(1)} гПа за 24 год)`, value: -p });
+      breakdown.push({ text: `Стрибок тиску (${pressureDiff.toFixed(1)} гПа/добу)`, value: -p });
     }
   }
 
-  // SYNERGY PENALTIES
+  // SYNERGY PENALTIES (Symptoms)
+  // Moon base
+  if (moon.type === 'full') {
+    score -= 5;
+    symptoms.push({ text: `Ризик безсоння та тривожність (${moon.icon} Повня)`, value: -5 });
+  } else if (moon.type === 'new') {
+    score -= 5;
+    symptoms.push({ text: `Апатія та занепад сил (${moon.icon} Новомісяччя)`, value: -5 });
+  } else if (moon.type === 'first_quarter' || moon.type === 'last_quarter') {
+    score -= 2;
+    symptoms.push({ text: `Легка емоційна нестабільність (${moon.icon})`, value: -2 });
+  }
+
   // 1. Духота
   if (temp > 24 && humidity > 55) {
     const p = Math.round((temp - 24) * (humidity - 55) * 0.4);
     score -= p;
-    breakdown.push({ text: `[Синдром] Сильна задуха`, value: -p });
+    symptoms.push({ text: `Сильна задуха`, value: -p });
   }
-  // 2. Риск мигрени
+  // 2. Риск мигрени (давление + буря + луна)
   if (pressureDiff > 5 && kp >= 3) {
-    const p = 15 + Math.round((kp - 2) * 5);
+    let p = 15 + Math.round((kp - 2) * 5);
+    if (moon.type === 'full') p += 10; // Critical moon synergy
     score -= p;
-    breakdown.push({ text: `[Синдром] Ризик мігрені (тиск + буря)`, value: -p });
+    symptoms.push({ text: moon.type === 'full' ? `Екстремальна мігрень (Буря + Тиск + Повня)` : `Ризик мігрені (Буря + Тиск)`, value: -p });
   }
   // 3. Суставы
   if (pressure < 1005 && humidity > 60) {
     const p = 15;
     score -= p;
-    breakdown.push({ text: `[Синдром] Ломота в суглобах (вогкість + низький тиск)`, value: -p });
+    symptoms.push({ text: `Ломота в суглобах (Вогкість + Низький тиск)`, value: -p });
   }
   // 4. Продувной мороз
   if (temp < 10 && wind > 5) {
     const p = Math.round((10 - temp) * wind * 0.3);
     if (p > 0) {
       score -= p;
-      breakdown.push({ text: `[Синдром] Сильний морозний вітер`, value: -p });
+      symptoms.push({ text: `Переохолодження (Мороз + Вітер)`, value: -p });
     }
   }
+  // 5. Гипертония (Высокое давление + Полная луна)
+  if (pressure > 1020 && moon.type === 'full') {
+    const p = 15;
+    score -= p;
+    symptoms.push({ text: `Гіпертонічний ризик (Високий тиск + Повня)`, value: -p });
+  }
+  // 6. Гипотония/Слабость (Низкое давление + Новолуние)
+  if (pressure < 1000 && moon.type === 'new') {
+    const p = 15;
+    score -= p;
+    symptoms.push({ text: `Екстремальна слабкість (Низький тиск + Новомісяччя)`, value: -p });
+  }
 
-  return { score: Math.max(0, Math.min(100, score)), breakdown };
+  return { score: Math.max(0, Math.min(100, score)), breakdown, symptoms, moon };
 }
 
 function updateTheme(score) {
@@ -226,7 +275,7 @@ function updateTheme(score) {
   els.statusText.textContent = statusMsg;
 }
 
-function renderBreakdown(breakdown) {
+function renderBreakdown(breakdown, symptoms) {
   els.breakdown.innerHTML = '';
   breakdown.forEach(item => {
     const isBonus = item.value === 0;
@@ -238,6 +287,24 @@ function renderBreakdown(breakdown) {
     `;
     els.breakdown.appendChild(div);
   });
+
+  els.symptoms.innerHTML = '';
+  if (symptoms && symptoms.length > 0) {
+    const title = document.createElement('div');
+    title.className = 'symptoms-title';
+    title.innerText = 'Симптоми та ризики:';
+    els.symptoms.appendChild(title);
+
+    symptoms.forEach(item => {
+      const div = document.createElement('div');
+      div.className = `symptom-item`;
+      div.innerHTML = `
+        <span>${item.text}</span>
+        <span class="symptom-penalty">${item.value}%</span>
+      `;
+      els.symptoms.appendChild(div);
+    });
+  }
 }
 
 function renderForecast(weatherData, kpForecastArray) {
@@ -276,9 +343,9 @@ function renderForecast(weatherData, kpForecastArray) {
       const aqi = 20; // fallback AQI for forecast
       const kp = getKpForDate(kpForecastArray, dateObj);
       
-      const { score } = calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hourly, index);
+      const { score, symptoms, moon } = calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hourly, index, dateObj);
       
-      daysMap.get(dayString).push({ period, score, temp, pressure, humidity, wind, kp, aqi });
+      daysMap.get(dayString).push({ period, score, temp, pressure, humidity, wind, kp, aqi, symptoms, moon });
     }
   });
 
@@ -311,9 +378,19 @@ function renderForecast(weatherData, kpForecastArray) {
       const tKp = getTrend(p.kp, prevKp, 0, 3);
       const tAqi = getTrend(p.aqi, prevAqi, 0, 20);
 
+      // Render forecasted symptoms
+      let fSymptomsHTML = '';
+      if (p.symptoms && p.symptoms.length > 0) {
+        fSymptomsHTML = `<div class="f-symptoms">`;
+        p.symptoms.forEach(sym => {
+          fSymptomsHTML += `<div class="f-symptom-tag">${sym.text}</div>`;
+        });
+        fSymptomsHTML += `</div>`;
+      }
+
       periodsHTML += `
         <div class="forecast-period ${statusClass}">
-          <span class="time">${p.period}</span>
+          <span class="time">${p.period} ${p.moon.icon}</span>
           <span class="score">${p.score}%</span>
           <div class="forecast-metrics">
             <div class="f-metric">
@@ -341,6 +418,7 @@ function renderForecast(weatherData, kpForecastArray) {
               <span class="f-trend" style="color: ${tAqi.color}">${tAqi.arrow}</span>
             </div>
           </div>
+          ${fSymptomsHTML}
         </div>
       `;
       
@@ -385,11 +463,11 @@ async function updateDashboard() {
     // Current index in hourly data
     const nowIndex = weather.hourly.time.findIndex(t => new Date(t).getTime() >= new Date().getTime());
 
-    const { score, breakdown } = calculateScoreAndBreakdown(
-      temp, humidity, pressure, wind, aqi, currentKp, weather.hourly, nowIndex
+    const { score, breakdown, symptoms } = calculateScoreAndBreakdown(
+      temp, humidity, pressure, wind, aqi, currentKp, weather.hourly, nowIndex, new Date()
     );
     
-    renderBreakdown(breakdown);
+    renderBreakdown(breakdown, symptoms);
     renderForecast(weather, kpForecastArray);
     
     animateValue(els.score, 0, score, 1500);

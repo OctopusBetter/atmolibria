@@ -230,12 +230,66 @@ h1 {
 }
 
 .breakdown-list {
-  width: 100%;
+  margin-top: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  text-align: left;
+  gap: 0.8rem;
+  padding-right: 1rem;
+}
+
+.symptoms-list {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--card-border);
+}
+
+.split-lists {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .split-lists {
+    grid-template-columns: 1fr;
+  }
+  .symptoms-list {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid var(--card-border);
+    padding-top: 1rem;
+    margin-top: 1rem;
+  }
+  .breakdown-list {
+    padding-right: 0;
+  }
+}
+
+.symptoms-title {
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+.symptom-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8rem 1.2rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #ef4444;
+}
+
+.symptom-penalty {
+  font-weight: 700;
 }
 
 .breakdown-item {
@@ -368,6 +422,23 @@ h1 {
 .f-trend {
   font-size: 0.9rem;
   font-weight: bold;
+}
+
+.f-symptoms {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.f-symptom-tag {
+  background: rgba(239, 68, 68, 0.15);
+  color: #b91c1c;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
 }
 
 .bottom-controls {
