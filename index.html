@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atmolibria | Самочувствие и Погода</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <div class="gradient-bg"></div>
+      
+      <main class="container">
+        <header>
+          <h1>Atmolibria</h1>
+          <button id="geo-btn" class="capsule-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            Обновить геопозицию
+          </button>
+        </header>
+
+        <section class="wellbeing-card capsule">
+          <h2 class="label">Индекс самочувствия</h2>
+          <div class="score-container">
+            <div id="score" class="score-value">--%</div>
+            <div id="status-text" class="status">Загрузка данных...</div>
+          </div>
+          <p id="location" class="location-text">Харьков (по умолчанию)</p>
+          <div id="breakdown-container" class="breakdown-list"></div>
+        </section>
+
+        <section class="metrics-grid">
+          <div class="metric-card capsule">
+            <span class="metric-label">Температура</span>
+            <span id="temp" class="metric-value">--°C</span>
+          </div>
+          <div class="metric-card capsule">
+            <span class="metric-label">Влажность</span>
+            <span id="humidity" class="metric-value">--%</span>
+          </div>
+          <div class="metric-card capsule">
+            <span class="metric-label">Давление</span>
+            <span id="pressure" class="metric-value">-- гПа</span>
+          </div>
+          <div class="metric-card capsule">
+            <span class="metric-label">Качество воздуха (AQI)</span>
+            <span id="aqi" class="metric-value">--</span>
+          </div>
+          <div class="metric-card capsule">
+            <span class="metric-label">Ветер</span>
+            <span id="wind" class="metric-value">-- м/с</span>
+          </div>
+          <div class="metric-card capsule">
+            <span class="metric-label">Магнитные бури (Kp)</span>
+            <span id="kp-index" class="metric-value">--</span>
+          </div>
+        </section>
+
+        <section class="forecast-section capsule">
+          <h2 class="section-title">Прогноз на 3 дня</h2>
+          <div id="forecast-container" class="forecast-grid">
+            <div class="status" style="text-align:center; width:100%;">Загрузка прогноза...</div>
+          </div>
+        </section>
+
+        <section class="charts-section capsule">
+          <h2 class="section-title">Динамика (последние 24 часа)</h2>
+          <div class="chart-wrapper">
+            <canvas id="pressureChart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="kpChart"></canvas>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
