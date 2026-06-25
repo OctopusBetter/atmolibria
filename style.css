@@ -276,6 +276,34 @@ h1 {
 .forecast-period.neutral .score { color: #f59e0b; }
 .forecast-period.bad .score { color: #ef4444; }
 
+.forecast-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  margin-top: 0.5rem;
+  text-align: left;
+}
+
+.f-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.4);
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+}
+
+.f-val {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.f-trend {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
 
 .charts-section {
   padding: 2rem;

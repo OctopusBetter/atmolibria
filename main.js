@@ -69,6 +69,32 @@ function getKpForDate(kpArray, targetDate) {
   return parseFloat(closest.kp);
 }
 
+function getDistanceToRange(val, min, max) {
+  if (val < min) return min - val;
+  if (val > max) return val - max;
+  return 0;
+}
+
+function getTrend(current, previous, idealMin, idealMax) {
+  if (current === previous || previous === null || previous === undefined) {
+    return { arrow: '▶', class: 'trend-neutral', color: 'var(--text-muted)' };
+  }
+  
+  const isRising = current > previous;
+  const arrow = isRising ? '▲' : '▼';
+  
+  const distCurrent = getDistanceToRange(current, idealMin, idealMax);
+  const distPrev = getDistanceToRange(previous, idealMin, idealMax);
+  
+  if (distCurrent < distPrev) {
+    return { arrow, class: 'trend-good', color: '#10b981' };
+  } else if (distCurrent > distPrev) {
+    return { arrow, class: 'trend-bad', color: '#ef4444' };
+  } else {
+    return { arrow: isRising ? '▲' : '▼', class: 'trend-neutral', color: 'var(--text-muted)' };
+  }
+}
+
 function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hourlyData, currentIndex) {
   let score = 100;
   let breakdown = [];
@@ -262,9 +288,17 @@ function renderForecast(weatherData, kpForecastArray) {
       
       const { score } = calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hourly, index);
       
-      daysMap.get(dayString).push({ period, score, temp, pressure });
+      daysMap.get(dayString).push({ period, score, temp, pressure, humidity, wind, kp, aqi });
     }
   });
+
+  // We need initial "previous" values to compare the first forecast period against current weather
+  let prevTemp = Number(els.temp.textContent.replace('°C', ''));
+  let prevHumidity = Number(els.humidity.textContent.replace('%', ''));
+  let prevPressure = Number(els.pressure.textContent.replace(' гПа', ''));
+  let prevWind = Number(els.wind.textContent.replace(' м/с', ''));
+  let prevKp = Number(els.kpIndex.textContent);
+  let prevAqi = Number(els.aqi.textContent);
 
   // Render map
   for (const [dayString, periods] of Array.from(daysMap.entries()).slice(0, 3)) { // max 3 days
@@ -279,15 +313,54 @@ function renderForecast(weatherData, kpForecastArray) {
       if (p.score < 50) statusClass = 'bad';
       else if (p.score < 80) statusClass = 'neutral';
       
+      // Calculate trends
+      const tTemp = getTrend(p.temp, prevTemp, 18, 24);
+      const tPress = getTrend(p.pressure, prevPressure, 1000, 1020);
+      const tHum = getTrend(p.humidity, prevHumidity, 30, 60);
+      const tWind = getTrend(p.wind, prevWind, 0, 7);
+      const tKp = getTrend(p.kp, prevKp, 0, 3);
+      const tAqi = getTrend(p.aqi, prevAqi, 0, 20);
+
       periodsHTML += `
         <div class="forecast-period ${statusClass}">
           <span class="time">${p.period}</span>
           <span class="score">${p.score}%</span>
-          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; opacity: 0.8; line-height: 1.2;">
-            ${Math.round(p.temp)}°C<br>${Math.round(p.pressure)} гПа
+          <div class="forecast-metrics">
+            <div class="f-metric">
+              <span class="f-val">${Math.round(p.temp)}°C</span>
+              <span class="f-trend" style="color: ${tTemp.color}">${tTemp.arrow}</span>
+            </div>
+            <div class="f-metric">
+              <span class="f-val">${Math.round(p.pressure)} гПа</span>
+              <span class="f-trend" style="color: ${tPress.color}">${tPress.arrow}</span>
+            </div>
+            <div class="f-metric">
+              <span class="f-val">${Math.round(p.humidity)}%</span>
+              <span class="f-trend" style="color: ${tHum.color}">${tHum.arrow}</span>
+            </div>
+            <div class="f-metric">
+              <span class="f-val">${Math.round(p.wind)} м/с</span>
+              <span class="f-trend" style="color: ${tWind.color}">${tWind.arrow}</span>
+            </div>
+            <div class="f-metric">
+              <span class="f-val">Kp ${p.kp.toFixed(1)}</span>
+              <span class="f-trend" style="color: ${tKp.color}">${tKp.arrow}</span>
+            </div>
+            <div class="f-metric">
+              <span class="f-val">AQI ${Math.round(p.aqi)}</span>
+              <span class="f-trend" style="color: ${tAqi.color}">${tAqi.arrow}</span>
+            </div>
           </div>
         </div>
       `;
+      
+      // Update previous values for next period comparison
+      prevTemp = p.temp;
+      prevHumidity = p.humidity;
+      prevPressure = p.pressure;
+      prevWind = p.wind;
+      prevKp = p.kp;
+      prevAqi = p.aqi;
     });
 
     dayDiv.innerHTML = `
@@ -439,10 +512,11 @@ els.geoBtn.addEventListener('click', () => {
       setTimeout(() => els.geoBtn.innerHTML = `Оновити геопозицію`, 3000);
     },
     (error) => {
-      alert('Не вдалося отримати геопозицію.');
+      alert('Не вдалося отримати геопозицію. Можливо, немає доступу.');
       els.geoBtn.disabled = false;
       els.geoBtn.innerHTML = 'Повторити спробу';
-    }
+    },
+    { timeout: 10000, maximumAge: 0 }
   );
 });
 
