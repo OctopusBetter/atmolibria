@@ -262,7 +262,7 @@ function renderForecast(weatherData, kpForecastArray) {
       
       const { score } = calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hourly, index);
       
-      daysMap.get(dayString).push({ period, score });
+      daysMap.get(dayString).push({ period, score, temp, pressure });
     }
   });
 
@@ -283,6 +283,9 @@ function renderForecast(weatherData, kpForecastArray) {
         <div class="forecast-period ${statusClass}">
           <span class="time">${p.period}</span>
           <span class="score">${p.score}%</span>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; opacity: 0.8; line-height: 1.2;">
+            ${Math.round(p.temp)}°C<br>${Math.round(p.pressure)} гПа
+          </div>
         </div>
       `;
     });
