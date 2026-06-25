@@ -73,71 +73,71 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
   let score = 100;
   let breakdown = [];
 
-  // TEMPERATURE (Ideal 20-22)
+  // TEMPERATURE (Ideal 18-24)
   let pTemp = 0;
   let textTemp = `Температура: Норма (${temp.toFixed(1)}°C)`;
-  if (temp > 22) {
-    pTemp = Math.round(Math.pow(temp - 22, 1.4) * 2.0);
-    textTemp = `Спекотно (${temp.toFixed(1)}°C)`;
-  } else if (temp < 20) {
-    pTemp = Math.round(Math.pow(20 - temp, 1.3) * 1.5);
-    textTemp = `Прохолодно/Холодно (${temp.toFixed(1)}°C)`;
+  if (temp > 24) {
+    pTemp = Math.round(Math.pow(temp - 24, 1.4) * 1.5);
+    if (pTemp > 0) textTemp = `Спекотно (${temp.toFixed(1)}°C)`;
+  } else if (temp < 18) {
+    pTemp = Math.round(Math.pow(18 - temp, 1.3) * 1.2);
+    if (pTemp > 0) textTemp = `Прохолодно/Холодно (${temp.toFixed(1)}°C)`;
   }
   score -= pTemp;
   breakdown.push({ text: textTemp, value: -pTemp });
 
-  // HUMIDITY (Ideal 40-50)
+  // HUMIDITY (Ideal 30-60)
   let pHum = 0;
   let textHum = `Вологість: Норма (${humidity}%)`;
-  if (humidity > 50) {
-    pHum = Math.round(Math.pow(humidity - 50, 1.25) * 0.5);
-    textHum = `Вогко/Висока вологість (${humidity}%)`;
-  } else if (humidity < 40) {
-    pHum = Math.round(Math.pow(40 - humidity, 1.25) * 0.5);
-    textHum = `Сухе повітря (${humidity}%)`;
+  if (humidity > 60) {
+    pHum = Math.round(Math.pow(humidity - 60, 1.2) * 0.4);
+    if (pHum > 0) textHum = `Вогко/Висока вологість (${humidity}%)`;
+  } else if (humidity < 30) {
+    pHum = Math.round(Math.pow(30 - humidity, 1.2) * 0.4);
+    if (pHum > 0) textHum = `Сухе повітря (${humidity}%)`;
   }
   score -= pHum;
   breakdown.push({ text: textHum, value: -pHum });
 
-  // PRESSURE (Ideal 1010-1015)
+  // PRESSURE (Ideal 1000-1020)
   let pPress = 0;
   let textPress = `Тиск: Норма (${Math.round(pressure)} гПа)`;
-  if (pressure < 1010) {
-    pPress = Math.round(Math.pow(1010 - pressure, 1.3) * 1.2);
-    textPress = `Низький тиск (${Math.round(pressure)} гПа)`;
-  } else if (pressure > 1015) {
-    pPress = Math.round(Math.pow(pressure - 1015, 1.3) * 1.2);
-    textPress = `Високий тиск (${Math.round(pressure)} гПа)`;
+  if (pressure < 1000) {
+    pPress = Math.round(Math.pow(1000 - pressure, 1.2) * 1.5);
+    if (pPress > 0) textPress = `Низький тиск (${Math.round(pressure)} гПа)`;
+  } else if (pressure > 1020) {
+    pPress = Math.round(Math.pow(pressure - 1020, 1.2) * 1.5);
+    if (pPress > 0) textPress = `Високий тиск (${Math.round(pressure)} гПа)`;
   }
   score -= pPress;
   breakdown.push({ text: textPress, value: -pPress });
 
-  // AQI (Ideal 0-15)
+  // AQI (Ideal 0-20)
   let pAqi = 0;
   let textAqi = `Якість повітря: Норма (AQI ${Math.round(aqi)})`;
-  if (aqi > 15) {
-    pAqi = Math.round(Math.pow(aqi - 15, 1.2) * 0.5);
-    textAqi = `Забруднення повітря (AQI ${Math.round(aqi)})`;
+  if (aqi > 20) {
+    pAqi = Math.round(Math.pow(aqi - 20, 1.1) * 0.4);
+    if (pAqi > 0) textAqi = `Забруднення повітря (AQI ${Math.round(aqi)})`;
   }
   score -= pAqi;
   breakdown.push({ text: textAqi, value: -pAqi });
 
-  // KP (Ideal 0-2)
+  // KP (Ideal 0-3)
   let pKp = 0;
   let textKp = `Магнітний фон: Норма (Kp ${kp.toFixed(1)})`;
-  if (kp > 2) {
-    pKp = Math.round(Math.pow(kp - 2, 1.8) * 4);
-    textKp = `Магнітні збурення (Kp ${kp.toFixed(1)})`;
+  if (kp > 3) {
+    pKp = Math.round(Math.pow(kp - 3, 1.8) * 6);
+    if (pKp > 0) textKp = `Магнітні збурення (Kp ${kp.toFixed(1)})`;
   }
   score -= pKp;
   breakdown.push({ text: textKp, value: -pKp });
 
-  // WIND (Ideal 0-3 m/s)
+  // WIND (Ideal 0-7 m/s)
   let pWind = 0;
   let textWind = `Вітер: Норма (${wind.toFixed(1)} м/с)`;
-  if (wind > 3) {
-    pWind = Math.round(Math.pow(wind - 3, 1.2) * 1.0);
-    textWind = `Сильний вітер (${wind.toFixed(1)} м/с)`;
+  if (wind > 7) {
+    pWind = Math.round(Math.pow(wind - 7, 1.3) * 1.5);
+    if (pWind > 0) textWind = `Сильний вітер (${wind.toFixed(1)} м/с)`;
   }
   score -= pWind;
   breakdown.push({ text: textWind, value: -pWind });
@@ -213,12 +213,12 @@ function updateTheme(score) {
 function renderBreakdown(breakdown) {
   els.breakdown.innerHTML = '';
   breakdown.forEach(item => {
-    const div = document.createElement('div');
     const isBonus = item.value === 0;
+    const div = document.createElement('div');
     div.className = `breakdown-item ${isBonus ? 'bonus' : 'penalty'}`;
     div.innerHTML = `
       <span>${item.text}</span>
-      <span>${isBonus ? '' : item.value + '%'}</span>
+      <span>${isBonus ? '(0%)' : item.value + '%'}</span>
     `;
     els.breakdown.appendChild(div);
   });
