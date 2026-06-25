@@ -43,13 +43,63 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--current-grad-1) 0%, var(--current-grad-2) 100%);
-  opacity: 0.6;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--primary-bg);
   z-index: -1;
+  overflow: hidden;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.6;
+  animation: floatOrb 20s infinite ease-in-out alternate;
   transition: background 1.5s ease-in-out;
-  filter: blur(40px);
+}
+
+.orb-1 {
+  width: 50vw;
+  height: 50vw;
+  min-width: 300px;
+  min-height: 300px;
+  top: -10%;
+  left: -10%;
+  background: var(--current-grad-1);
+  animation-delay: 0s;
+}
+
+.orb-2 {
+  width: 60vw;
+  height: 60vw;
+  min-width: 400px;
+  min-height: 400px;
+  bottom: -20%;
+  right: -10%;
+  background: var(--current-grad-2);
+  animation-duration: 25s;
+  animation-delay: -5s;
+}
+
+.orb-3 {
+  width: 40vw;
+  height: 40vw;
+  min-width: 250px;
+  min-height: 250px;
+  top: 30%;
+  left: 30%;
+  background: var(--current-grad-1);
+  opacity: 0.4;
+  animation-duration: 18s;
+  animation-delay: -10s;
+}
+
+@keyframes floatOrb {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(5vw, -5vh) scale(1.1); }
+  66% { transform: translate(-3vw, 4vh) scale(0.9); }
+  100% { transform: translate(4vw, 3vh) scale(1); }
 }
 
 .container {

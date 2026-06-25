@@ -1,23 +1,13 @@
 import './style.css';
-import Chart from 'chart.js/auto';
 
 let currentLat = 50.00;
 let currentLon = 36.23;
 let locationName = 'Харків (за замовчуванням)';
 
-let pressureChartInstance = null;
-let kpChartInstance = null;
-
 const els = {
   score: document.getElementById('score'),
   statusText: document.getElementById('status-text'),
   location: document.getElementById('location'),
-  temp: document.getElementById('temp'),
-  humidity: document.getElementById('humidity'),
-  pressure: document.getElementById('pressure'),
-  wind: document.getElementById('wind'),
-  aqi: document.getElementById('aqi'),
-  kpIndex: document.getElementById('kp-index'),
   geoBtn: document.getElementById('geo-btn'),
   breakdown: document.getElementById('breakdown-container'),
   forecast: document.getElementById('forecast-container'),
@@ -293,12 +283,12 @@ function renderForecast(weatherData, kpForecastArray) {
   });
 
   // We need initial "previous" values to compare the first forecast period against current weather
-  let prevTemp = Number(els.temp.textContent.replace('°C', ''));
-  let prevHumidity = Number(els.humidity.textContent.replace('%', ''));
-  let prevPressure = Number(els.pressure.textContent.replace(' гПа', ''));
-  let prevWind = Number(els.wind.textContent.replace(' м/с', ''));
-  let prevKp = Number(els.kpIndex.textContent);
-  let prevAqi = Number(els.aqi.textContent);
+  let prevTemp = weatherData.current.temperature_2m;
+  let prevHumidity = weatherData.current.relative_humidity_2m;
+  let prevPressure = weatherData.current.surface_pressure;
+  let prevWind = weatherData.current.wind_speed_10m;
+  let prevKp = getKpForDate(kpForecastArray, new Date());
+  let prevAqi = 20; // fallback current AQI or passed in
 
   // Render map
   for (const [dayString, periods] of Array.from(daysMap.entries()).slice(0, 3)) { // max 3 days
@@ -371,65 +361,8 @@ function renderForecast(weatherData, kpForecastArray) {
   }
 }
 
-function renderCharts(weatherData, kpForecastArray) {
-  const hourly = weatherData.hourly;
-  const nowIndex = hourly.time.findIndex(t => new Date(t).getTime() >= new Date().getTime());
-  const startIndex = Math.max(0, nowIndex - 24);
-  
-  const pressureData = hourly.surface_pressure.slice(startIndex, startIndex + 24);
-  const timeLabels = hourly.time.slice(startIndex, startIndex + 24).map(t => new Date(t).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
-  
-  const kpData = hourly.time.slice(startIndex, startIndex + 24).map(t => getKpForDate(kpForecastArray, new Date(t)));
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { grid: { display: false } },
-      y: { border: { display: false } }
-    },
-    elements: { line: { tension: 0.4 }, point: { radius: 2 } }
-  };
-
-  if (pressureChartInstance) pressureChartInstance.destroy();
-  const ctxPressure = document.getElementById('pressureChart').getContext('2d');
-  pressureChartInstance = new Chart(ctxPressure, {
-    type: 'line',
-    data: {
-      labels: timeLabels,
-      datasets: [{
-        label: 'Атм. тиск (гПа)',
-        data: pressureData,
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        fill: true
-      }]
-    },
-    options: {
-      ...chartOptions,
-      plugins: { ...chartOptions.plugins, title: { display: true, text: 'Атмосферний тиск (24 год)' } }
-    }
-  });
-
-  if (kpChartInstance) kpChartInstance.destroy();
-  const ctxKp = document.getElementById('kpChart').getContext('2d');
-  kpChartInstance = new Chart(ctxKp, {
-    type: 'bar',
-    data: {
-      labels: timeLabels,
-      datasets: [{
-        label: 'Kp Індекс',
-        data: kpData,
-        backgroundColor: kpData.map(v => v >= 4 ? 'rgba(239, 68, 68, 0.6)' : 'rgba(16, 185, 129, 0.6)'),
-        borderRadius: 4
-      }]
-    },
-    options: {
-      ...chartOptions,
-      plugins: { ...chartOptions.plugins, title: { display: true, text: 'Магнітні бурі Kp (24 год)' } }
-    }
-  });
+    els.forecast.appendChild(dayDiv);
+  }
 }
 
 async function updateDashboard() {
@@ -453,13 +386,6 @@ async function updateDashboard() {
     // Find current Kp
     const currentKp = getKpForDate(kpForecastArray, new Date());
 
-    els.temp.textContent = `${temp.toFixed(1)}°C`;
-    els.humidity.textContent = `${humidity}%`;
-    els.pressure.textContent = `${Math.round(pressure)} гПа`;
-    els.wind.textContent = `${wind.toFixed(1)} м/с`;
-    els.aqi.textContent = Math.round(aqi);
-    els.kpIndex.textContent = currentKp.toFixed(1);
-
     // Current index in hourly data
     const nowIndex = weather.hourly.time.findIndex(t => new Date(t).getTime() >= new Date().getTime());
 
@@ -469,7 +395,6 @@ async function updateDashboard() {
     
     renderBreakdown(breakdown);
     renderForecast(weather, kpForecastArray);
-    renderCharts(weather, kpForecastArray);
     
     animateValue(els.score, 0, score, 1500);
     updateTheme(score);
