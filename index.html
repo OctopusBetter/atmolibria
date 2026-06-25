@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Atmolibria | Самочувствие и Погода</title>
+    <title>Atmolibria | Самопочуття та Погода</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
   </head>
@@ -19,17 +19,17 @@
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
-            Обновить геопозицию
+            Оновити геопозицію
           </button>
         </header>
 
         <section class="wellbeing-card capsule">
-          <h2 class="label">Индекс самочувствия</h2>
+          <h2 class="label">Індекс самопочуття</h2>
           <div class="score-container">
             <div id="score" class="score-value">--%</div>
-            <div id="status-text" class="status">Загрузка данных...</div>
+            <div id="status-text" class="status">Завантаження даних...</div>
           </div>
-          <p id="location" class="location-text">Харьков (по умолчанию)</p>
+          <p id="location" class="location-text">Харків (за замовчуванням)</p>
           <div id="breakdown-container" class="breakdown-list"></div>
         </section>
 
@@ -39,7 +39,7 @@
             <span id="temp" class="metric-value">--°C</span>
           </div>
           <div class="metric-card capsule">
-            <span class="metric-label">Влажность</span>
+            <span class="metric-label">Вологість</span>
             <span id="humidity" class="metric-value">--%</span>
           </div>
           <div class="metric-card capsule">
@@ -61,14 +61,14 @@
         </section>
 
         <section class="forecast-section capsule">
-          <h2 class="section-title">Прогноз на 3 дня</h2>
+          <h2 class="section-title">Прогноз на 3 дні</h2>
           <div id="forecast-container" class="forecast-grid">
-            <div class="status" style="text-align:center; width:100%;">Загрузка прогноза...</div>
+            <div class="status" style="text-align:center; width:100%;">Завантаження прогнозу...</div>
           </div>
         </section>
 
         <section class="charts-section capsule">
-          <h2 class="section-title">Динамика (последние 24 часа)</h2>
+          <h2 class="section-title">Динаміка (останні 24 години)</h2>
           <div class="chart-wrapper">
             <canvas id="pressureChart"></canvas>
           </div>

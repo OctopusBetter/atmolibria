@@ -3,7 +3,7 @@ import Chart from 'chart.js/auto';
 
 let currentLat = 50.00;
 let currentLon = 36.23;
-let locationName = 'Харьков (по умолчанию)';
+let locationName = 'Харків (за замовчуванням)';
 
 let pressureChartInstance = null;
 let kpChartInstance = null;
@@ -78,66 +78,66 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
   let textTemp = `Температура: Норма (${temp.toFixed(1)}°C)`;
   if (temp > 22) {
     pTemp = Math.round(Math.pow(temp - 22, 1.4) * 2.0);
-    textTemp = `Жарко (${temp.toFixed(1)}°C)`;
+    textTemp = `Спекотно (${temp.toFixed(1)}°C)`;
   } else if (temp < 20) {
     pTemp = Math.round(Math.pow(20 - temp, 1.3) * 1.5);
-    textTemp = `Прохладно/Холодно (${temp.toFixed(1)}°C)`;
+    textTemp = `Прохолодно/Холодно (${temp.toFixed(1)}°C)`;
   }
   score -= pTemp;
   breakdown.push({ text: textTemp, value: -pTemp });
 
   // HUMIDITY (Ideal 40-50)
   let pHum = 0;
-  let textHum = `Влажность: Норма (${humidity}%)`;
+  let textHum = `Вологість: Норма (${humidity}%)`;
   if (humidity > 50) {
     pHum = Math.round(Math.pow(humidity - 50, 1.25) * 0.5);
-    textHum = `Сыро/Высокая влажность (${humidity}%)`;
+    textHum = `Вогко/Висока вологість (${humidity}%)`;
   } else if (humidity < 40) {
     pHum = Math.round(Math.pow(40 - humidity, 1.25) * 0.5);
-    textHum = `Сухой воздух (${humidity}%)`;
+    textHum = `Сухе повітря (${humidity}%)`;
   }
   score -= pHum;
   breakdown.push({ text: textHum, value: -pHum });
 
   // PRESSURE (Ideal 1010-1015)
   let pPress = 0;
-  let textPress = `Давление: Норма (${Math.round(pressure)} гПа)`;
+  let textPress = `Тиск: Норма (${Math.round(pressure)} гПа)`;
   if (pressure < 1010) {
     pPress = Math.round(Math.pow(1010 - pressure, 1.3) * 1.2);
-    textPress = `Низкое давление (${Math.round(pressure)} гПа)`;
+    textPress = `Низький тиск (${Math.round(pressure)} гПа)`;
   } else if (pressure > 1015) {
     pPress = Math.round(Math.pow(pressure - 1015, 1.3) * 1.2);
-    textPress = `Высокое давление (${Math.round(pressure)} гПа)`;
+    textPress = `Високий тиск (${Math.round(pressure)} гПа)`;
   }
   score -= pPress;
   breakdown.push({ text: textPress, value: -pPress });
 
   // AQI (Ideal 0-15)
   let pAqi = 0;
-  let textAqi = `Качество воздуха: Норма (AQI ${Math.round(aqi)})`;
+  let textAqi = `Якість повітря: Норма (AQI ${Math.round(aqi)})`;
   if (aqi > 15) {
     pAqi = Math.round(Math.pow(aqi - 15, 1.2) * 0.5);
-    textAqi = `Загрязнение воздуха (AQI ${Math.round(aqi)})`;
+    textAqi = `Забруднення повітря (AQI ${Math.round(aqi)})`;
   }
   score -= pAqi;
   breakdown.push({ text: textAqi, value: -pAqi });
 
   // KP (Ideal 0-2)
   let pKp = 0;
-  let textKp = `Магнитный фон: Норма (Kp ${kp.toFixed(1)})`;
+  let textKp = `Магнітний фон: Норма (Kp ${kp.toFixed(1)})`;
   if (kp > 2) {
     pKp = Math.round(Math.pow(kp - 2, 1.8) * 4);
-    textKp = `Магнитные возмущения (Kp ${kp.toFixed(1)})`;
+    textKp = `Магнітні збурення (Kp ${kp.toFixed(1)})`;
   }
   score -= pKp;
   breakdown.push({ text: textKp, value: -pKp });
 
   // WIND (Ideal 0-3 m/s)
   let pWind = 0;
-  let textWind = `Ветер: Норма (${wind.toFixed(1)} м/с)`;
+  let textWind = `Вітер: Норма (${wind.toFixed(1)} м/с)`;
   if (wind > 3) {
     pWind = Math.round(Math.pow(wind - 3, 1.2) * 1.0);
-    textWind = `Сильный ветер (${wind.toFixed(1)} м/с)`;
+    textWind = `Сильний вітер (${wind.toFixed(1)} м/с)`;
   }
   score -= pWind;
   breakdown.push({ text: textWind, value: -pWind });
@@ -153,7 +153,7 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
     if (pressureDiff > 5) {
       const p = Math.round(Math.pow(pressureDiff - 4, 1.6) * 1.5);
       score -= p;
-      breakdown.push({ text: `Скачок давления (${pressureDiff.toFixed(1)} гПа за 24ч)`, value: -p });
+      breakdown.push({ text: `Стрибок тиску (${pressureDiff.toFixed(1)} гПа за 24 год)`, value: -p });
     }
   }
 
@@ -162,26 +162,26 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
   if (temp > 24 && humidity > 55) {
     const p = Math.round((temp - 24) * (humidity - 55) * 0.4);
     score -= p;
-    breakdown.push({ text: `[Синдром] Сильная духота`, value: -p });
+    breakdown.push({ text: `[Синдром] Сильна задуха`, value: -p });
   }
   // 2. Риск мигрени
   if (pressureDiff > 5 && kp >= 3) {
     const p = 15 + Math.round((kp - 2) * 5);
     score -= p;
-    breakdown.push({ text: `[Синдром] Риск мигрени (давление + буря)`, value: -p });
+    breakdown.push({ text: `[Синдром] Ризик мігрені (тиск + буря)`, value: -p });
   }
   // 3. Суставы
   if (pressure < 1005 && humidity > 60) {
     const p = 15;
     score -= p;
-    breakdown.push({ text: `[Синдром] Ломота в суставах (сырость + низкое давл.)`, value: -p });
+    breakdown.push({ text: `[Синдром] Ломота в суглобах (вогкість + низький тиск)`, value: -p });
   }
   // 4. Продувной мороз
   if (temp < 10 && wind > 5) {
     const p = Math.round((10 - temp) * wind * 0.3);
     if (p > 0) {
       score -= p;
-      breakdown.push({ text: `[Синдром] Сильный морозный ветер`, value: -p });
+      breakdown.push({ text: `[Синдром] Сильний морозний вітер`, value: -p });
     }
   }
 
@@ -194,15 +194,15 @@ function updateTheme(score) {
   if (score >= 80) {
     color1 = 'var(--grad-good-1)';
     color2 = 'var(--grad-good-2)';
-    statusMsg = 'Отличное самочувствие';
+    statusMsg = 'Відмінне самопочуття';
   } else if (score >= 50) {
     color1 = 'var(--grad-neutral-1)';
     color2 = 'var(--grad-neutral-2)';
-    statusMsg = 'Возможен дискомфорт';
+    statusMsg = 'Можливий дискомфорт';
   } else {
     color1 = 'var(--grad-bad-1)';
     color2 = 'var(--grad-bad-2)';
-    statusMsg = 'Тяжелые погодные условия';
+    statusMsg = 'Складні погодні умови';
   }
 
   els.root.style.setProperty('--current-grad-1', color1);
@@ -239,13 +239,13 @@ function renderForecast(weatherData, kpForecastArray) {
     // Ignore past days completely
     if (dateObj.getDate() < now.getDate() && dateObj.getMonth() <= now.getMonth()) return; 
 
-    const dayString = dateObj.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+    const dayString = dateObj.toLocaleDateString('uk-UA', { weekday: 'long', month: 'short', day: 'numeric' });
     const hour = dateObj.getHours();
     
     let period = null;
-    if (hour === 9) period = 'Утро';
+    if (hour === 9) period = 'Ранок';
     else if (hour === 15) period = 'День';
-    else if (hour === 21) period = 'Вечер';
+    else if (hour === 21) period = 'Вечір';
     
     if (period) {
       if (!daysMap.has(dayString)) daysMap.set(dayString, []);
@@ -323,7 +323,7 @@ function renderCharts(weatherData, kpForecastArray) {
     data: {
       labels: timeLabels,
       datasets: [{
-        label: 'Атм. давление (гПа)',
+        label: 'Атм. тиск (гПа)',
         data: pressureData,
         borderColor: '#3b82f6',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -332,7 +332,7 @@ function renderCharts(weatherData, kpForecastArray) {
     },
     options: {
       ...chartOptions,
-      plugins: { ...chartOptions.plugins, title: { display: true, text: 'Атмосферное давление (24ч)' } }
+      plugins: { ...chartOptions.plugins, title: { display: true, text: 'Атмосферний тиск (24 год)' } }
     }
   });
 
@@ -343,7 +343,7 @@ function renderCharts(weatherData, kpForecastArray) {
     data: {
       labels: timeLabels,
       datasets: [{
-        label: 'Kp Индекс',
+        label: 'Kp Індекс',
         data: kpData,
         backgroundColor: kpData.map(v => v >= 4 ? 'rgba(239, 68, 68, 0.6)' : 'rgba(16, 185, 129, 0.6)'),
         borderRadius: 4
@@ -351,7 +351,7 @@ function renderCharts(weatherData, kpForecastArray) {
     },
     options: {
       ...chartOptions,
-      plugins: { ...chartOptions.plugins, title: { display: true, text: 'Магнитные бури Kp (24ч)' } }
+      plugins: { ...chartOptions.plugins, title: { display: true, text: 'Магнітні бурі Kp (24 год)' } }
     }
   });
 }
@@ -359,7 +359,7 @@ function renderCharts(weatherData, kpForecastArray) {
 async function updateDashboard() {
   els.score.innerHTML = '--<span style="font-size: 0.5em">%</span>';
   els.location.textContent = locationName;
-  els.breakdown.innerHTML = '<div style="font-size:0.9rem; text-align:center;">Анализ данных...</div>';
+  els.breakdown.innerHTML = '<div style="font-size:0.9rem; text-align:center;">Аналіз даних...</div>';
 
   try {
     const [weather, airInfo, kpForecastArray] = await Promise.all([
@@ -400,7 +400,7 @@ async function updateDashboard() {
 
   } catch (error) {
     console.error(error);
-    els.statusText.textContent = 'Ошибка загрузки данных';
+    els.statusText.textContent = 'Помилка завантаження даних';
     els.breakdown.innerHTML = '';
   }
 }
@@ -420,25 +420,25 @@ function animateValue(obj, start, end, duration) {
 
 els.geoBtn.addEventListener('click', () => {
   if (!navigator.geolocation) {
-    alert('Геолокация не поддерживается вашим браузером');
+    alert('Геолокація не підтримується вашим браузером');
     return;
   }
   els.geoBtn.disabled = true;
-  els.geoBtn.innerHTML = 'Определение...';
+  els.geoBtn.innerHTML = 'Визначення...';
   navigator.geolocation.getCurrentPosition(
     async (position) => {
       currentLat = position.coords.latitude;
       currentLon = position.coords.longitude;
-      locationName = 'Ваша геопозиция';
+      locationName = 'Ваша геопозиція';
       await updateDashboard();
       els.geoBtn.disabled = false;
-      els.geoBtn.innerHTML = `Обновлено`;
-      setTimeout(() => els.geoBtn.innerHTML = `Обновить геопозицию`, 3000);
+      els.geoBtn.innerHTML = `Оновлено`;
+      setTimeout(() => els.geoBtn.innerHTML = `Оновити геопозицію`, 3000);
     },
     (error) => {
-      alert('Не удалось получить геопозицию.');
+      alert('Не вдалося отримати геопозицію.');
       els.geoBtn.disabled = false;
-      els.geoBtn.innerHTML = 'Повторить попытку';
+      els.geoBtn.innerHTML = 'Повторити спробу';
     }
   );
 });
