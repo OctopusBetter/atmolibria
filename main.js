@@ -302,18 +302,7 @@ function calculateScoreAndBreakdown(temp, apparentTemp, humidity, pressure, wind
     symptoms.push({ text: `😴 Порушення сну (Пригнічення мелатоніну магнітною бурею)`, value: -p });
   }
 
-  // 10. Вплив вітру на психіку (Відкладений ефект затяжних вітрів)
-  let hadProlongedWind = false;
-  if (hourlyData && currentIndex >= 72) {
-    const windHistoryPast = hourlyData.wind_speed_10m.slice(currentIndex - 72, currentIndex - 24); // 1-3 days ago
-    const maxWindPast = Math.max(...windHistoryPast);
-    if (maxWindPast > 8) hadProlongedWind = true;
-  }
-  if (hadProlongedWind) {
-    const p = 10;
-    score -= p;
-    symptoms.push({ text: `😠 Емоційне виснаження / Тривожність (Наслідок затяжних вітрів)`, value: -p });
-  }
+
 
   return { score: Math.max(0, Math.min(100, score)), breakdown, symptoms, moon };
 }
