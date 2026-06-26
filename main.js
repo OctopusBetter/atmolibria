@@ -16,8 +16,8 @@ const els = {
 };
 
 async function fetchWeatherData(lat, lon) {
-  // past_hours=24 for history, forecast_days=3 for forecast
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m&past_hours=24&forecast_days=3&timezone=auto`;
+  // past_days=3 for history (to calculate delayed effects), forecast_days=3 for forecast
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m&past_days=3&forecast_days=3&timezone=auto`;
   const res = await fetch(url);
   return await res.json();
 }
@@ -197,6 +197,20 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
     }
   }
 
+  // TEMPERATURE VARIABILITY (TV)
+  if (hourlyData && currentIndex >= 24) {
+    const tempHistory = hourlyData.temperature_2m.slice(currentIndex - 24, currentIndex);
+    const maxT = Math.max(...tempHistory);
+    const minT = Math.min(...tempHistory);
+    const tempDiff = maxT - minT;
+    
+    if (tempDiff > 8) {
+      const p = Math.round((tempDiff - 8) * 1.5);
+      score -= p;
+      breakdown.push({ text: `Перепад температур (${tempDiff.toFixed(1)}°C/добу)`, value: -p });
+    }
+  }
+
   // SYNERGY PENALTIES (Symptoms)
   // Moon base
   if (moon.type === 'full') {
@@ -214,40 +228,70 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
   if (temp > 24 && humidity > 55) {
     const p = Math.round((temp - 24) * (humidity - 55) * 0.4);
     score -= p;
-    symptoms.push({ text: `Сильна задуха`, value: -p });
+    symptoms.push({ text: `🫁 Сильна задуха`, value: -p });
   }
-  // 2. Риск мигрени (давление + буря + луна)
-  if (pressureDiff > 5 && kp >= 3) {
-    let p = 15 + Math.round((kp - 2) * 5);
-    if (moon.type === 'full') p += 10; // Critical moon synergy
+  
+  // 2. Риск мигрени (Фен / Шинук: Сильный ветер + падение давления)
+  if (wind > 10 && pressureDiff > 5) {
+    const p = 20;
     score -= p;
-    symptoms.push({ text: moon.type === 'full' ? `Екстремальна мігрень (Буря + Тиск + Повня)` : `Ризик мігрені (Буря + Тиск)`, value: -p });
+    symptoms.push({ text: `🧠 Мігрень та тривожність (Сильний вітер + Стрибок тиску)`, value: -p });
+  } else if (pressureDiff > 5 && kp >= 3) {
+    let p = 15 + Math.round((kp - 2) * 5);
+    if (moon.type === 'full') p += 10;
+    score -= p;
+    symptoms.push({ text: moon.type === 'full' ? `🧠 Екстремальна мігрень (Буря + Тиск + Повня)` : `🧠 Ризик мігрені (Буря + Тиск)`, value: -p });
   }
-  // 3. Суставы
-  if (pressure < 1005 && humidity > 60) {
+
+  // 3. Суглоби (Відкладений ефект тиску + Вологість)
+  let hadRecentPressureDrop = false;
+  if (hourlyData && currentIndex >= 72) {
+     const history3days = hourlyData.surface_pressure.slice(currentIndex - 72, currentIndex);
+     const maxP3 = Math.max(...history3days);
+     const minP3 = Math.min(...history3days);
+     if (maxP3 - minP3 > 5) hadRecentPressureDrop = true;
+  }
+  if ((pressure < 1005 || hadRecentPressureDrop) && humidity > 60) {
     const p = 15;
     score -= p;
-    symptoms.push({ text: `Ломота в суглобах (Вогкість + Низький тиск)`, value: -p });
+    symptoms.push({ text: `🦴 Ломота в суглобах (Вогкість + Барометричні зміни)`, value: -p });
   }
-  // 4. Продувной мороз
+
+  // 4. Кардіоваскулярний ризик (AQI + Kp)
+  if (kp >= 3 && aqi > 30) {
+    const p = 25;
+    score -= p;
+    symptoms.push({ text: `🫀 Навантаження на серце (Магнітна буря + Забруднення)`, value: -p });
+  }
+
+  // 5. Температурна інверсія (Низький вітер + AQI)
+  if (wind < 2 && aqi > 30) {
+    const p = 15;
+    score -= p;
+    symptoms.push({ text: `😷 Ефект застою повітря (Накопичення полютантів)`, value: -p });
+  }
+
+  // 6. Продувной мороз
   if (temp < 10 && wind > 5) {
     const p = Math.round((10 - temp) * wind * 0.3);
     if (p > 0) {
       score -= p;
-      symptoms.push({ text: `Переохолодження (Мороз + Вітер)`, value: -p });
+      symptoms.push({ text: `🥶 Переохолодження (Мороз + Вітер)`, value: -p });
     }
   }
-  // 5. Гипертония (Высокое давление + Полная луна)
+
+  // 7. Гипертония (Высокое давление + Полная луна)
   if (pressure > 1020 && moon.type === 'full') {
     const p = 15;
     score -= p;
-    symptoms.push({ text: `Гіпертонічний ризик (Високий тиск + Повня)`, value: -p });
+    symptoms.push({ text: `🩸 Гіпертонічний ризик (Високий тиск + Повня)`, value: -p });
   }
-  // 6. Гипотония/Слабость (Низкое давление + Новолуние)
+
+  // 8. Гипотония/Слабость (Низкое давление + Новолуние)
   if (pressure < 1000 && moon.type === 'new') {
     const p = 15;
     score -= p;
-    symptoms.push({ text: `Екстремальна слабкість (Низький тиск + Новомісяччя)`, value: -p });
+    symptoms.push({ text: `🥱 Екстремальна слабкість (Низький тиск + Новомісяччя)`, value: -p });
   }
 
   return { score: Math.max(0, Math.min(100, score)), breakdown, symptoms, moon };
