@@ -17,7 +17,7 @@ const els = {
 
 async function fetchWeatherData(lat, lon) {
   // past_days=3 for history (to calculate delayed effects), forecast_days=3 for forecast
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m&past_days=3&forecast_days=3&timezone=auto`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,surface_pressure,wind_speed_10m&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,surface_pressure,wind_speed_10m&past_days=3&forecast_days=3&timezone=auto`;
   const res = await fetch(url);
   return await res.json();
 }
@@ -106,22 +106,22 @@ function getMoonPhase(date) {
   return { name: 'Старий місяць', icon: '🌘', type: 'waning_crescent' };
 }
 
-function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hourlyData, currentIndex, dateObj) {
+function calculateScoreAndBreakdown(temp, apparentTemp, humidity, pressure, wind, aqi, kp, hourlyData, currentIndex, dateObj) {
   let score = 100;
   let breakdown = [];
   let symptoms = [];
 
   const moon = getMoonPhase(dateObj || new Date());
 
-  // TEMPERATURE
+  // TEMPERATURE (Apparent)
   let pTemp = 0;
-  let textTemp = `Температура: Норма (${temp.toFixed(1)}°C)`;
-  if (temp > 24) {
-    pTemp = Math.round(Math.pow(temp - 24, 1.4) * 1.5);
-    if (pTemp > 0) textTemp = `Спекотно (${temp.toFixed(1)}°C)`;
-  } else if (temp < 18) {
-    pTemp = Math.round(Math.pow(18 - temp, 1.3) * 1.2);
-    if (pTemp > 0) textTemp = `Прохолодно (${temp.toFixed(1)}°C)`;
+  let textTemp = `Відчувається як: Норма (${apparentTemp.toFixed(1)}°C)`;
+  if (apparentTemp > 24) {
+    pTemp = Math.round(Math.pow(apparentTemp - 24, 1.4) * 1.5);
+    if (pTemp > 0) textTemp = `Спекотно (${apparentTemp.toFixed(1)}°C)`;
+  } else if (apparentTemp < 18) {
+    pTemp = Math.round(Math.pow(18 - apparentTemp, 1.3) * 1.2);
+    if (pTemp > 0) textTemp = `Прохолодно (${apparentTemp.toFixed(1)}°C)`;
   }
   score -= pTemp;
   breakdown.push({ text: textTemp, value: -pTemp });
@@ -197,9 +197,9 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
     }
   }
 
-  // TEMPERATURE VARIABILITY (TV)
+  // TEMPERATURE VARIABILITY (TV) using apparent temperature
   if (hourlyData && currentIndex >= 24) {
-    const tempHistory = hourlyData.temperature_2m.slice(currentIndex - 24, currentIndex);
+    const tempHistory = hourlyData.apparent_temperature.slice(currentIndex - 24, currentIndex);
     const maxT = Math.max(...tempHistory);
     const minT = Math.min(...tempHistory);
     const tempDiff = maxT - minT;
@@ -225,8 +225,8 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
   }
 
   // 1. Духота
-  if (temp > 24 && humidity > 55) {
-    const p = Math.round((temp - 24) * (humidity - 55) * 0.4);
+  if (apparentTemp > 24 && humidity > 55) {
+    const p = Math.round((apparentTemp - 24) * (humidity - 55) * 0.4);
     score -= p;
     symptoms.push({ text: `🫁 Сильна задуха`, value: -p });
   }
@@ -272,8 +272,8 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
   }
 
   // 6. Продувной мороз
-  if (temp < 10 && wind > 5) {
-    const p = Math.round((10 - temp) * wind * 0.3);
+  if (apparentTemp < 10 && wind > 5) {
+    const p = Math.round((10 - apparentTemp) * wind * 0.3);
     if (p > 0) {
       score -= p;
       symptoms.push({ text: `🥶 Переохолодження (Мороз + Вітер)`, value: -p });
@@ -292,6 +292,27 @@ function calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hou
     const p = 15;
     score -= p;
     symptoms.push({ text: `🥱 Екстремальна слабкість (Низький тиск + Новомісяччя)`, value: -p });
+  }
+
+  // 9. Нічні магнітні бурі та сон
+  const hour = dateObj ? dateObj.getHours() : new Date().getHours();
+  if ((hour >= 20 || hour <= 6) && kp >= 3) {
+    const p = 15;
+    score -= p;
+    symptoms.push({ text: `😴 Порушення сну (Пригнічення мелатоніну магнітною бурею)`, value: -p });
+  }
+
+  // 10. Вплив вітру на психіку (Відкладений ефект затяжних вітрів)
+  let hadProlongedWind = false;
+  if (hourlyData && currentIndex >= 72) {
+    const windHistoryPast = hourlyData.wind_speed_10m.slice(currentIndex - 72, currentIndex - 24); // 1-3 days ago
+    const maxWindPast = Math.max(...windHistoryPast);
+    if (maxWindPast > 8) hadProlongedWind = true;
+  }
+  if (hadProlongedWind) {
+    const p = 10;
+    score -= p;
+    symptoms.push({ text: `😠 Емоційне виснаження / Тривожність (Наслідок затяжних вітрів)`, value: -p });
   }
 
   return { score: Math.max(0, Math.min(100, score)), breakdown, symptoms, moon };
@@ -378,18 +399,19 @@ function renderForecast(weatherData, kpForecastArray) {
       if (!daysMap.has(dayString)) daysMap.set(dayString, []);
       
       const temp = hourly.temperature_2m[index];
+      const apparentTemp = hourly.apparent_temperature[index];
       const humidity = hourly.relative_humidity_2m[index];
       const pressure = hourly.surface_pressure[index];
       const wind = hourly.wind_speed_10m[index];
       
-      if (temp === null || humidity === null || pressure === null || wind === null) return;
+      if (temp === null || apparentTemp === null || humidity === null || pressure === null || wind === null) return;
       
       const aqi = 20; // fallback AQI for forecast
       const kp = getKpForDate(kpForecastArray, dateObj);
       
-      const { score, symptoms, moon } = calculateScoreAndBreakdown(temp, humidity, pressure, wind, aqi, kp, hourly, index, dateObj);
+      const { score, symptoms, moon } = calculateScoreAndBreakdown(temp, apparentTemp, humidity, pressure, wind, aqi, kp, hourly, index, dateObj);
       
-      daysMap.get(dayString).push({ period, score, temp, pressure, humidity, wind, kp, aqi, symptoms, moon });
+      daysMap.get(dayString).push({ period, score, temp, apparentTemp, pressure, humidity, wind, kp, aqi, symptoms, moon });
     }
   });
 
@@ -438,7 +460,7 @@ function renderForecast(weatherData, kpForecastArray) {
           <span class="score">${p.score}%</span>
           <div class="forecast-metrics">
             <div class="f-metric">
-              <span class="f-val">${Math.round(p.temp)}°C</span>
+              <span class="f-val">${Math.round(p.temp)}°C <small>(${Math.round(p.apparentTemp)}°C)</small></span>
               <span class="f-trend" style="color: ${tTemp.color}">${tTemp.arrow}</span>
             </div>
             <div class="f-metric">
@@ -496,6 +518,7 @@ async function updateDashboard() {
     ]);
 
     const temp = weather.current.temperature_2m;
+    const apparentTemp = weather.current.apparent_temperature;
     const humidity = weather.current.relative_humidity_2m;
     const pressure = weather.current.surface_pressure;
     const wind = weather.current.wind_speed_10m;
@@ -508,7 +531,7 @@ async function updateDashboard() {
     const nowIndex = weather.hourly.time.findIndex(t => new Date(t).getTime() >= new Date().getTime());
 
     const { score, breakdown, symptoms } = calculateScoreAndBreakdown(
-      temp, humidity, pressure, wind, aqi, currentKp, weather.hourly, nowIndex, new Date()
+      temp, apparentTemp, humidity, pressure, wind, aqi, currentKp, weather.hourly, nowIndex, new Date()
     );
     
     renderBreakdown(breakdown, symptoms);
